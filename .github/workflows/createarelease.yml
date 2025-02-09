@@ -1,43 +1,27 @@
-# Sure! Here's a basic example of a GitHub Actions workflow to create a release:
-
-name: Create Release
+name: semantic_versioning
 
 on:
   push:
-    tags:
-      - 'v*.*.*'
 
 jobs:
   release:
-    runs-on: ubuntu-latest
-
+    runs-on:  ubuntu-latest 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
+      - name: Checkout Code
+        uses: actions/checkout@v4
 
-      - name: Create GitHub Release
-        id: create_release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Get Next Version
+        id: semver
+        uses: ietf-tools/semver-action@v1
         with:
-          tag_name: ${{ github.ref }}
-          release_name: Release ${{ github.ref }}
-          body: |
-            Release notes for ${{ github.ref }}
-          draft: false
-          prerelease: false
-
-      - name: Upload Release Asset
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+          branch: main
+          
+      - name: Create Release 
+        id: release
+        uses: ncipollo/release-action@v1.14.0
         with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./path/to/your/asset.zip
-          asset_name: asset.zip
-          asset_content_type: application/zip
-
-
-# This workflow triggers when you push a tag that matches the pattern `v*.*.*`. It checks out the code, creates a release, and uploads an asset to the release.
-
+          generateReleaseNotes: true
+          name: ${{ steps.semver.outputs.next }}
+          tag: ${{ steps.semver.outputs.next }}
+          token: ${{ secrets.GITHUB_TOKEN }}
